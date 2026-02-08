@@ -1,0 +1,12 @@
+diff --git a/modules/mbedtls/Kconfig.mbedtls b/modules/mbedtls/Kconfig.mbedtls
+index 2d4636988ef..32146f3e41e 100644
+--- a/modules/mbedtls/Kconfig.mbedtls
++++ b/modules/mbedtls/Kconfig.mbedtls
+@@ -267,7 +267,6 @@ config MBEDTLS_SOME_CIPHER_ENABLED
+ 
+ config MBEDTLS_CIPHER_AES_ENABLED
+ 	bool "AES block cipher"
+-	default y if PSA_WANT_KEY_TYPE_AES && MBEDTLS_PSA_CRYPTO_C
+ 
+ if MBEDTLS_CIPHER_AES_ENABLED
+ 
