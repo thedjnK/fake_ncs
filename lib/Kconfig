@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+menu "Libraries"
+
+rsource "multithreading_lock/Kconfig"
+rsource "hw_unique_key/Kconfig"
+rsource "identity_key/Kconfig"
+
+endmenu

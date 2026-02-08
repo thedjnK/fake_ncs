@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2019 - 2020 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+menu "Multiprotocol service layer (MPSL)"
+
+rsource "cx/Kconfig"
+rsource "init/Kconfig"
+rsource "pm/Kconfig"
+rsource "clock_ctrl/Kconfig"
+
+endmenu

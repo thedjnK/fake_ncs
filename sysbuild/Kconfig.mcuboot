@@ -1,0 +1,96 @@
+# Copyright (c) 2023 Nordic Semiconductor
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+
+menu "MCUboot configuration"
+	depends on BOOTLOADER_MCUBOOT
+
+menuconfig MCUBOOT_HARDWARE_DOWNGRADE_PREVENTION
+	bool "Downgrade prevention using hardware security counters"
+	depends on (SOC_NRF5340_CPUAPP || SOC_SERIES_NRF91 || SOC_SERIES_NRF54L || SOC_SERIES_NRF54H)
+	depends on !SECURE_BOOT_APPCORE
+	depends on !QSPI_XIP_SPLIT_IMAGE
+	help
+	  This option can be enabled by the application and will ensure that the
+	  MCUBOOT_HW_DOWNGRADE_PREVENTION Kconfig option is enabled in the MCUboot image.
+
+	  Note that this can only be used on first image, it will not be applied to the second
+	  image (network core updates) on nRF5340 which will use software downgrade protection
+	  on the network core CPU instead.
+
+if MCUBOOT_HARDWARE_DOWNGRADE_PREVENTION
+
+config MCUBOOT_HW_DOWNGRADE_PREVENTION_COUNTER_SLOTS
+	int "Number of available hardware counter slots"
+	default 240
+	range 2 288 if SOC_SERIES_NRF54L
+	range 2 300
+	depends on !SOC_SERIES_NRF54H
+	help
+	  When MCUBOOT_HW_DOWNGRADE_PREVENTION is enabled, MCUboot will use one hardware counter
+	  for each updatable image (UPDATEABLE_IMAGE_NUMBER). This configuration specifies how many
+	  counter slots will be allocated for each hardware counter. The hardware counters are
+	  stored in OTP storage. The rationale for the default number (240): Assume one update a
+	  month for 10 years, then double that value just in case. This default fits comfortably
+	  within the OTP region of UICR.
+
+config MCUBOOT_HW_DOWNGRADE_PREVENTION_COUNTER_VALUE
+	int "Security counter value"
+	default 1
+	range 1 65535 if !SOC_SERIES_NRF54H
+	range 1 4294967295 if SOC_SERIES_NRF54H
+	help
+	  The security counter value for this image.
+	  This is the value that will be passed to the --security-counter parameter of imgtool.py
+
+endif # MCUBOOT_HARDWARE_DOWNGRADE_PREVENTION
+
+if BOOTLOADER_MCUBOOT
+
+choice BOOT_SIGNATURE_TYPE
+	default BOOT_SIGNATURE_TYPE_RSA if THINGY91_STATIC_PARTITIONS_FACTORY
+	default BOOT_SIGNATURE_TYPE_ED25519 if SOC_SERIES_NRF54L || SOC_SERIES_NRF54H
+	default BOOT_SIGNATURE_TYPE_ECDSA_P256 if ((SOC_NRF52840 || SOC_SERIES_NRF91) && !BOARD_THINGY91_NRF9160 && !BOARD_THINGY91_NRF52840)
+	default BOOT_SIGNATURE_TYPE_ECDSA_P256 if SECURE_BOOT_APPCORE
+
+endchoice
+
+choice MCUBOOT_MODE
+	default MCUBOOT_MODE_SWAP_USING_MOVE
+
+endchoice
+
+config BOOT_SIGNATURE_TYPE_PURE
+	bool "Verify signature directly over image"
+	depends on SOC_SERIES_NRF54L || SOC_SERIES_NRF54H
+	depends on BOOT_SIGNATURE_TYPE_ED25519
+	help
+	  The image signature will be verified over image rather than
+	  hash of an image.
+	  This option is currently only supported with ED25519 and configurations
+	  where both image slots are within internal SoC device storage.
+
+config BOOT_IMG_HASH_ALG_SHA512
+	bool "Use SHA512 for image hash calculation"
+	depends on BOOT_SIGNATURE_TYPE_ED25519
+	default y if SOC_SERIES_NRF54L || SOC_SERIES_NRF54H
+	help
+	  The image hash will be calculated using SHA512 algorithm.
+
+config MCUBOOT_SIGNATURE_USING_KMU
+	bool "Use KMU stored keys for signature verification"
+	depends on SOC_SERIES_NRF54L
+	depends on BOOT_SIGNATURE_TYPE_ED25519
+	help
+	  The device needs to be provisioned with proper set of keys.
+
+config MCUBOOT_GENERATE_DEFAULT_KMU_KEYFILE
+	bool "Generate default keyfile for provisioning during build"
+	depends on SOC_SERIES_NRF54L
+	depends on MCUBOOT_SIGNATURE_USING_KMU
+	help
+	  If enabled, the build system will generate keyfile.json file in the build directory.
+
+endif
+
+endmenu
